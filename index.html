@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ORÈVA — Considered Essentials</title>
+<meta name="description" content="ORÈVA is a calm, modern storefront for considered everyday essentials. Honest materials, careful craft, cash on delivery.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="site-header" id="site-header"></header>
+
+<main>
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">New season edit</span>
+        <h1>Considered essentials, made to last.</h1>
+        <p>ORÈVA brings restraint back to everyday things — honest materials, careful construction, and a quiet aesthetic that doesn't shout.</p>
+        <div class="hero-actions">
+          <a href="shop.html" class="btn btn--brass">Shop the collection</a>
+          <a href="about.html" class="btn btn--outline">Our story</a>
+        </div>
+      </div>
+      <div class="hero-media">
+        <img id="hero-image" src="" alt="Featured ORÈVA product" loading="eager">
+      </div>
+    </div>
+  </section>
+
+  <section class="section--tight">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Browse</span>
+          <h2>Shop by category</h2>
+        </div>
+        <a href="shop.html" class="btn btn--ghost">View all →</a>
+      </div>
+      <div class="cat-grid" id="category-grid">
+        <div class="skeleton" style="aspect-ratio:3/4;"></div>
+        <div class="skeleton" style="aspect-ratio:3/4;"></div>
+        <div class="skeleton" style="aspect-ratio:3/4;"></div>
+        <div class="skeleton" style="aspect-ratio:3/4;"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section--tight">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Curated</span>
+          <h2>Featured pieces</h2>
+        </div>
+        <a href="shop.html?filter=featured" class="btn btn--ghost">View all →</a>
+      </div>
+      <div class="product-grid" id="featured-grid"></div>
+    </div>
+  </section>
+
+  <section class="section--tight">
+    <div class="container split">
+      <img src="https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=1200&auto=format&fit=crop" alt="ORÈVA studio detail" loading="lazy">
+      <div class="split-copy">
+        <span class="eyebrow">The ORÈVA approach</span>
+        <h2>Fewer, better things.</h2>
+        <p>We work in small batches with a short list of materials we trust, and we'd rather sell you one piece that lasts than five that don't. Every product page tells you exactly what you're getting — no filler, no noise.</p>
+        <a href="about.html" class="btn btn--outline u-mt-3">Read our story</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section--tight">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Most loved</span>
+          <h2>Best sellers</h2>
+        </div>
+        <a href="shop.html?filter=bestseller" class="btn btn--ghost">View all →</a>
+      </div>
+      <div class="product-grid" id="bestseller-grid"></div>
+    </div>
+  </section>
+
+  <section class="section--tight">
+    <div class="container">
+      <div class="trust-strip">
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg>
+          <h4>Cash on delivery</h4>
+          <p>Pay when your order arrives — simple and secure.</p>
+        </div>
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          <h4>6-day delivery</h4>
+          <p>Every order ships with a clear, tracked delivery window.</p>
+        </div>
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v6c0 5-3.5 7.5-7 9-3.5-1.5-7-4-7-9V6l7-3z"/></svg>
+          <h4>Considered quality</h4>
+          <p>Materials and construction chosen to last, not just to look good once.</p>
+        </div>
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4v6h6M20 20v-6h-6"/><path d="M5 14a8 8 0 0014 3M19 10A8 8 0 005 7"/></svg>
+          <h4>Real support</h4>
+          <p>A person, not a bot — reach us directly on WhatsApp or email.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script type="module">
+  import "./js/app.js";
+  import { fetchFeatured, fetchBestSellers, fetchAllProducts, fetchCategories, productCardHTML, bindWishButtons, skeletonGrid } from "./js/products.js";
+
+  document.getElementById("featured-grid").innerHTML = skeletonGrid(4);
+  document.getElementById("bestseller-grid").innerHTML = skeletonGrid(4);
+
+  const CATEGORY_IMAGES = [
+    "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?q=80&w=800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=800&auto=format&fit=crop",
+  ];
+
+  (async () => {
+    const [featured, bestSellers, all, categories] = await Promise.all([
+      fetchFeatured(),
+      fetchBestSellers(),
+      fetchAllProducts(),
+      fetchCategories(),
+    ]);
+
+    const heroImg = document.getElementById("hero-image");
+    const heroSource = (featured[0] || all[0]);
+    if (heroSource && heroSource.images && heroSource.images[0]) {
+      heroImg.src = heroSource.images[0];
+    } else {
+      heroImg.closest(".hero-media").style.display = "none";
+    }
+
+    const catGrid = document.getElementById("category-grid");
+    if (categories.length) {
+      catGrid.innerHTML = categories
+        .slice(0, 4)
+        .map(
+          (c, i) => `
+          <a class="cat-card" href="category.html?name=${encodeURIComponent(c)}">
+            <img src="${CATEGORY_IMAGES[i % CATEGORY_IMAGES.length]}" alt="${c}" loading="lazy">
+            <span class="cat-card__label">${c}</span>
+          </a>`
+        )
+        .join("");
+    } else {
+      catGrid.innerHTML = `<p class="u-muted">Categories will appear here once products are added.</p>`;
+    }
+
+    const featGrid = document.getElementById("featured-grid");
+    featGrid.innerHTML = featured.length
+      ? featured.slice(0, 8).map(productCardHTML).join("")
+      : `<p class="u-muted">No featured pieces yet — check back soon.</p>`;
+
+    const bsGrid = document.getElementById("bestseller-grid");
+    bsGrid.innerHTML = bestSellers.length
+      ? bestSellers.slice(0, 8).map(productCardHTML).join("")
+      : `<p class="u-muted">No best sellers yet — check back soon.</p>`;
+
+    bindWishButtons(document);
+  })();
+</script>
+</body>
+</html>

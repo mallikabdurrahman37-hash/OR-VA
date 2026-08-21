@@ -1,0 +1,81 @@
+rules_version = '2';
+
+// ORÈVA — Firestore security rules
+// This extends the existing baseline (projects / users / visitor_ids) described
+// in the master spec without weakening it. Paste/merge into the Firebase console
+// alongside whatever the admin panel already defines for `projects`.
+// Client-side cancellation checks in orders.js are a UX convenience only —
+// these rules are what actually enforce the pre-shipment-only cancellation rule.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    // Admin check: mirror however the admin panel identifies admins today
+    // (e.g. a custom claim, or a fixed UID/allowlist doc). Placeholder below
+    // assumes a custom claim `admin: true` set via the admin panel / Cloud Functions.
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.admin == true;
+    }
+
+    // --- Existing baseline (preserve) ---
+    match /projects/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /visitor_ids/{docId} {
+      allow read, write: if isSignedIn() &&
+        (resource == null || resource.data.authUid == request.auth.uid);
+    }
+
+    // --- ORÈVA storefront collections ---
+    match /products/{id} {
+      allow read: if resource.data.isActive == true || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /orders/{id} {
+      // Anyone can create an order (guests included) — orderStatus must start correctly.
+      allow create: if request.resource.data.orderStatus == "Order Placed"
+                    && request.resource.data.cancelled == false
+                    && request.resource.data.paymentMethod == "COD";
+
+      // A signed-in customer can read their own orders; admin can read all.
+      allow read: if isAdmin() ||
+                  (isSignedIn() && resource.data.userId == request.auth.uid);
+
+      // Customer-initiated update: ONLY allowed to cancel their own order,
+      // and ONLY while it hasn't shipped yet (orderStatus still Order Placed / Order Confirmed).
+      allow update: if isAdmin() || (
+        isSignedIn() &&
+        resource.data.userId == request.auth.uid &&
+        resource.data.cancelled == false &&
+        (resource.data.orderStatus == "Order Placed" || resource.data.orderStatus == "Order Confirmed") &&
+        request.resource.data.cancelled == true &&
+        request.resource.data.orderStatus == "Cancelled" &&
+        // no other fields may be changed by the customer on cancel
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["cancelled", "orderStatus"])
+      );
+
+      allow delete: if isAdmin();
+    }
+  }
+}

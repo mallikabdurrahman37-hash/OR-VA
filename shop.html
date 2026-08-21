@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shop All — ORÈVA</title>
+<meta name="description" content="Browse the full ORÈVA collection of considered essentials.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="site-header" id="site-header"></header>
+
+<main>
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="index.html">Home</a><span>/</span> Shop</nav>
+  </div>
+
+  <div class="container section--tight" style="padding-top:0;">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">The collection</span>
+        <h2 id="page-title">All products</h2>
+      </div>
+    </div>
+
+    <div class="chip-row" id="category-chips">
+      <button class="chip is-active" data-cat="">All</button>
+    </div>
+
+    <div class="toolbar u-mt-3">
+      <span class="u-muted" id="result-count" style="font-size:.85rem;"></span>
+      <div class="u-flex">
+        <select class="select" id="sort-select" aria-label="Sort products">
+          <option value="new">Newest</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+          <option value="name">Name A–Z</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="product-grid u-mt-3" id="product-grid"></div>
+  </div>
+</main>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script type="module">
+  import "./js/app.js";
+  import { fetchAllProducts, fetchCategories, productCardHTML, bindWishButtons, skeletonGrid, emptyStateHTML } from "./js/products.js";
+
+  const grid = document.getElementById("product-grid");
+  const chipsRow = document.getElementById("category-chips");
+  const sortSelect = document.getElementById("sort-select");
+  const resultCount = document.getElementById("result-count");
+  const pageTitle = document.getElementById("page-title");
+
+  grid.innerHTML = skeletonGrid(8);
+
+  const params = new URLSearchParams(window.location.search);
+  let activeCat = params.get("cat") || "";
+  let activeFilter = params.get("filter") || ""; // featured | bestseller
+  let sortMode = "new";
+
+  if (activeFilter === "featured") pageTitle.textContent = "Featured pieces";
+  if (activeFilter === "bestseller") pageTitle.textContent = "Best sellers";
+
+  let ALL = [];
+
+  function applyAndRender() {
+    let list = [...ALL];
+    if (activeCat) list = list.filter((p) => p.category === activeCat);
+    if (activeFilter === "featured") list = list.filter((p) => p.featured);
+    if (activeFilter === "bestseller") list = list.filter((p) => p.bestSeller);
+
+    if (sortMode === "price-asc") list.sort((a, b) => a.price - b.price);
+    else if (sortMode === "price-desc") list.sort((a, b) => b.price - a.price);
+    else if (sortMode === "name") list.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    else list.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+
+    resultCount.textContent = `${list.length} product${list.length === 1 ? "" : "s"}`;
+    grid.innerHTML = list.length ? list.map(productCardHTML).join("") : emptyStateHTML("No products match these filters yet.");
+    bindWishButtons(grid);
+  }
+
+  sortSelect.addEventListener("change", () => {
+    sortMode = sortSelect.value;
+    applyAndRender();
+  });
+
+  (async () => {
+    const [all, categories] = await Promise.all([fetchAllProducts(), fetchCategories()]);
+    ALL = all;
+    chipsRow.innerHTML =
+      `<button class="chip ${activeCat === "" ? "is-active" : ""}" data-cat="">All</button>` +
+      categories
+        .map((c) => `<button class="chip ${activeCat === c ? "is-active" : ""}" data-cat="${c}">${c}</button>`)
+        .join("");
+    chipsRow.querySelectorAll(".chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        activeCat = chip.getAttribute("data-cat");
+        activeFilter = ""; // manual category browsing overrides featured/bestseller filter
+        chipsRow.querySelectorAll(".chip").forEach((c) => c.classList.remove("is-active"));
+        chip.classList.add("is-active");
+        pageTitle.textContent = activeCat || "All products";
+        applyAndRender();
+      });
+    });
+    applyAndRender();
+  })();
+</script>
+</body>
+</html>

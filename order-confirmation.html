@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Order Confirmed — ORÈVA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="site-header" id="site-header"></header>
+
+<main>
+  <div class="container container--narrow section--tight u-center">
+    <div style="width:64px;height:64px;border-radius:50%;background:var(--moss);color:var(--paper);display:flex;align-items:center;justify-content:center;margin-inline:auto;">
+      <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5 9-11"/></svg>
+    </div>
+    <span class="eyebrow u-mt-3" style="justify-content:center;">Thank you</span>
+    <h2 class="u-mt-1">Your order is confirmed</h2>
+    <p class="u-muted u-mt-2" id="order-id-line">Order ID: —</p>
+  </div>
+
+  <div class="container container--narrow section--tight" style="padding-top:0;">
+    <div class="summary-card" id="order-summary">
+      <div class="page-loader"><span class="spinner"></span> Loading order…</div>
+    </div>
+    <div class="u-flex u-mt-4" style="justify-content:center; gap:1rem; flex-wrap:wrap;">
+      <a href="track-order.html" id="track-link" class="btn btn--brass">Track this order</a>
+      <a href="shop.html" class="btn btn--outline">Continue shopping</a>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script type="module">
+  import "./js/app.js";
+  import { formatINR, formatDate } from "./js/app.js";
+  import { fetchOrderById } from "./js/orders.js";
+
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+  document.getElementById("order-id-line").textContent = `Order ID: ${id || "—"}`;
+  document.getElementById("track-link").href = `track-order.html?id=${id || ""}`;
+
+  async function load() {
+    let order = null;
+    try {
+      order = await fetchOrderById(id);
+    } catch {}
+    if (!order) {
+      const cached = sessionStorage.getItem("oreva_last_order");
+      if (cached) order = JSON.parse(cached);
+    }
+    const mount = document.getElementById("order-summary");
+    if (!order) {
+      mount.innerHTML = `<p class="u-muted">We couldn't load your order details, but a confirmation has been recorded. Contact us if you need help.</p>`;
+      return;
+    }
+    mount.innerHTML = `
+      <div class="stack">
+        ${(order.items || [])
+          .map(
+            (i) => `<div class="u-flex" style="justify-content:space-between;font-size:.9rem;"><span>${i.name}${i.size ? ` (${i.size})` : ""} × ${i.qty}</span><span>${formatINR(i.price * i.qty)}</span></div>`
+          )
+          .join("")}
+      </div>
+      <div class="u-mt-3">
+        <div class="summary-row"><span>Subtotal</span><strong>${formatINR(order.subtotal)}</strong></div>
+        <div class="summary-row"><span>Shipping</span><strong>${order.shippingCharge ? formatINR(order.shippingCharge) : "Free"}</strong></div>
+      </div>
+      <div class="summary-total"><span>Total</span><span>${formatINR(order.totalAmount)}</span></div>
+      <div class="u-mt-3" style="font-size:.85rem;" class="u-muted">
+        <p class="u-muted">Delivering to: ${order.shippingAddress?.addressLine || ""}, ${order.shippingAddress?.city || ""}, ${order.shippingAddress?.state || ""} ${order.shippingAddress?.pincode || ""}</p>
+        <p class="u-muted u-mt-1">Expected delivery: ${formatDate(order.expectedDelivery)}</p>
+        <p class="u-muted u-mt-1">Payment: Cash on Delivery</p>
+      </div>
+    `;
+  }
+  load();
+</script>
+</body>
+</html>

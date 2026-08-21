@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FAQ — ORÈVA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="site-header" id="site-header"></header>
+
+<main>
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="index.html">Home</a><span>/</span> FAQ</nav>
+  </div>
+
+  <section class="container container--narrow section--tight" style="padding-top:0;">
+    <span class="eyebrow">Help center</span>
+    <h2 class="u-mt-1">Frequently Asked Questions</h2>
+
+    <div class="faq-list u-mt-4" id="faq-list"></div>
+  </section>
+</main>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script type="module">
+  import "./js/app.js";
+
+  const FAQS = [
+    ["What payment methods do you accept?", "We currently accept Cash on Delivery (COD) only. You pay in cash when your order is handed to you — no online payment is required."],
+    ["How long does delivery take?", "Every order ships with an expected delivery date of 6 calendar days from the date you place it. If it arrives sooner, great — if there's any delay, we'll post an update directly on your order page."],
+    ["Can I cancel my order?", "Yes, as long as it hasn't shipped yet. Head to My Orders, open the order, and use the Cancel Order button. Once an order has shipped, cancellation is no longer possible."],
+    ["How do I track my order?", "Use the Track Order page with your Order ID, or find it under My Orders if you're signed in. Courier and tracking details appear once your order has shipped."],
+    ["Do you accept returns or refunds?", "Our return and refund process is still being finalised. Please see our Return & Refund Policy page for the current position — we'll update it as soon as final terms are ready."],
+    ["Do I need an account to shop?", "No — you can browse and check out as a guest. Creating an account just makes it easier to view your order history later."],
+    ["How can I contact you?", "The fastest way is WhatsApp or a phone call — both are on our Contact page, along with our email and social channels."],
+  ];
+
+  document.getElementById("faq-list").innerHTML = FAQS.map(
+    ([q, a], i) => `
+    <div class="accordion-item ${i === 0 ? "is-open" : ""}">
+      <button class="accordion-trigger" data-acc>${q} <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+      <div class="accordion-panel" ${i === 0 ? 'style="max-height:200px;"' : ""}>
+        <div class="accordion-panel__inner">${a}</div>
+      </div>
+    </div>`
+  ).join("");
+
+  document.querySelectorAll("[data-acc]").forEach((trigger) => {
+    trigger.addEventListener("click", () => {
+      const item = trigger.closest(".accordion-item");
+      const panel = item.querySelector(".accordion-panel");
+      const isOpen = item.classList.contains("is-open");
+      item.classList.toggle("is-open");
+      panel.style.maxHeight = isOpen ? null : panel.scrollHeight + "px";
+    });
+  });
+</script>
+</body>
+</html>

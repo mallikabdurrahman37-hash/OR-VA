@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wishlist — ORÈVA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="site-header" id="site-header"></header>
+
+<main>
+  <div class="container section--tight">
+    <span class="eyebrow">Saved</span>
+    <h2 class="u-mt-1">Your Wishlist</h2>
+    <div class="product-grid u-mt-3" id="wishlist-grid"></div>
+  </div>
+</main>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script type="module">
+  import "./js/app.js";
+  import { fetchAllProducts, productCardHTML, bindWishButtons, skeletonGrid, emptyStateHTML } from "./js/products.js";
+  import { getWishlist } from "./js/wishlist.js";
+  import { refreshHeaderCounts } from "./js/app.js";
+
+  const grid = document.getElementById("wishlist-grid");
+  grid.innerHTML = skeletonGrid(4);
+
+  async function render() {
+    const ids = getWishlist();
+    if (!ids.length) {
+      grid.innerHTML = emptyStateHTML("You haven't saved anything yet. Tap the heart on a product to save it here.");
+      return;
+    }
+    const all = await fetchAllProducts();
+    const items = all.filter((p) => ids.includes(p.id));
+    grid.innerHTML = items.length ? items.map(productCardHTML).join("") : emptyStateHTML("Your saved products are no longer available.");
+    bindWishButtons(grid);
+  }
+
+  window.addEventListener("oreva:wishlist-changed", () => {
+    render();
+    refreshHeaderCounts();
+  });
+
+  render();
+</script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Checkout — ORÈVA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="site-header" id="site-header"></header>
+
+<main>
+  <div class="container section--tight">
+    <span class="eyebrow">Checkout</span>
+    <h2 class="u-mt-1">Delivery Details</h2>
+
+    <div id="checkout-empty" class="empty-state" hidden>
+      <p>Your bag is empty — add something before checking out.</p>
+      <a href="shop.html" class="btn btn--brass btn--sm">Shop now</a>
+    </div>
+
+    <div class="cart-layout u-mt-3" id="checkout-layout" hidden>
+      <form id="checkout-form" novalidate>
+        <h4>Contact</h4>
+        <div class="form-row u-mt-2">
+          <div class="form-field">
+            <label for="f-name">Full name</label>
+            <input id="f-name" name="customerName" type="text" required autocomplete="name">
+            <span class="error">Please enter your name.</span>
+          </div>
+          <div class="form-field">
+            <label for="f-phone">Phone number</label>
+            <input id="f-phone" name="phone" type="tel" required autocomplete="tel" placeholder="+91 XXXXXXXXXX">
+            <span class="error">Please enter a valid phone number.</span>
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="f-email">Email</label>
+          <input id="f-email" name="customerEmail" type="email" required autocomplete="email">
+          <span class="error">Please enter a valid email.</span>
+        </div>
+
+        <h4 class="u-mt-3">Shipping Address</h4>
+        <div class="form-field u-mt-2">
+          <label for="f-address">Address line</label>
+          <textarea id="f-address" name="addressLine" required autocomplete="street-address"></textarea>
+          <span class="error">Please enter your address.</span>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label for="f-city">City</label>
+            <input id="f-city" name="city" type="text" required autocomplete="address-level2">
+            <span class="error">Required.</span>
+          </div>
+          <div class="form-field">
+            <label for="f-state">State</label>
+            <input id="f-state" name="state" type="text" required autocomplete="address-level1">
+            <span class="error">Required.</span>
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="f-pincode">Pincode</label>
+          <input id="f-pincode" name="pincode" type="text" inputmode="numeric" required autocomplete="postal-code" style="max-width:200px;">
+          <span class="error">Please enter a valid pincode.</span>
+        </div>
+
+        <div class="notice-box u-mt-3">
+          Payment method: <strong>Cash on Delivery</strong> only. You'll pay in cash when your order arrives.
+        </div>
+
+        <button class="btn btn--brass btn--full u-mt-2" type="submit" id="place-order-btn">Place Order</button>
+      </form>
+
+      <aside class="summary-card">
+        <h4 class="u-mt-1">Order Summary</h4>
+        <div id="checkout-items" class="u-mt-2" style="max-height:260px; overflow-y:auto;"></div>
+        <div class="u-mt-3">
+          <div class="summary-row"><span>Subtotal</span><strong id="sum-subtotal">₹0</strong></div>
+          <div class="summary-row"><span>Shipping</span><strong id="sum-shipping">₹0</strong></div>
+        </div>
+        <div class="summary-total"><span>Total</span><span id="sum-total">₹0</span></div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script type="module">
+  import "./js/app.js";
+  import { toast, formatINR, onUserReady, getCurrentUser } from "./js/app.js";
+  import { getCart, cartTotals, clearCart } from "./js/cart.js";
+  import { placeOrder } from "./js/orders.js";
+
+  const items = getCart();
+  if (!items.length) {
+    document.getElementById("checkout-empty").hidden = false;
+  } else {
+    document.getElementById("checkout-layout").hidden = false;
+    document.getElementById("checkout-items").innerHTML = items
+      .map((i) => `<div class="u-flex" style="justify-content:space-between; font-size:.85rem; padding-block:.4rem; border-bottom:1px solid var(--line);"><span>${i.name}${i.size ? ` (${i.size})` : ""} × ${i.qty}</span><span>${formatINR(i.price * i.qty)}</span></div>`)
+      .join("");
+    const { subtotal, shippingCharge, totalAmount } = cartTotals(items);
+    document.getElementById("sum-subtotal").textContent = formatINR(subtotal);
+    document.getElementById("sum-shipping").textContent = shippingCharge === 0 ? "Free" : formatINR(shippingCharge);
+    document.getElementById("sum-total").textContent = formatINR(totalAmount);
+  }
+
+  function setError(field, hasError) {
+    field.classList.toggle("has-error", hasError);
+  }
+
+  const form = document.getElementById("checkout-form");
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const data = new FormData(form);
+    let valid = true;
+    [
+      ["customerName", "f-name"],
+      ["phone", "f-phone"],
+      ["customerEmail", "f-email"],
+      ["addressLine", "f-address"],
+      ["city", "f-city"],
+      ["state", "f-state"],
+      ["pincode", "f-pincode"],
+    ].forEach(([key, id]) => {
+      const val = (data.get(key) || "").toString().trim();
+      const field = document.getElementById(id).closest(".form-field");
+      let ok = val.length > 0;
+      if (key === "customerEmail" && ok) ok = /^\S+@\S+\.\S+$/.test(val);
+      if (key === "phone" && ok) ok = val.replace(/\D/g, "").length >= 10;
+      if (key === "pincode" && ok) ok = /^\d{4,8}$/.test(val);
+      setError(field, !ok);
+      if (!ok) valid = false;
+    });
+    if (!valid) {
+      toast("Please fix the highlighted fields", "error");
+      return;
+    }
+
+    const btn = document.getElementById("place-order-btn");
+    btn.disabled = true;
+    btn.textContent = "Placing order…";
+
+    try {
+      const { subtotal, shippingCharge, totalAmount } = cartTotals(items);
+      const user = getCurrentUser();
+      const order = await placeOrder({
+        user,
+        customerName: data.get("customerName"),
+        customerEmail: data.get("customerEmail"),
+        phone: data.get("phone"),
+        shippingAddress: {
+          name: data.get("customerName"),
+          phone: data.get("phone"),
+          addressLine: data.get("addressLine"),
+          city: data.get("city"),
+          state: data.get("state"),
+          pincode: data.get("pincode"),
+        },
+        items: items.map((i) => ({ id: i.id, name: i.name, image: i.image, price: i.price, qty: i.qty, size: i.size || null })),
+        subtotal,
+        shippingCharge,
+        totalAmount,
+      });
+      clearCart();
+      sessionStorage.setItem("oreva_last_order", JSON.stringify(order));
+      window.location.href = `order-confirmation.html?id=${order.id}`;
+    } catch (err) {
+      console.error(err);
+      toast("Could not place your order. Please try again.", "error");
+      btn.disabled = false;
+      btn.textContent = "Place Order";
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Search — ORÈVA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="site-header" id="site-header"></header>
+
+<main>
+  <div class="container section--tight">
+    <span class="eyebrow">Search</span>
+    <h2 class="u-mt-1">Results for “<span id="query-echo"></span>”</h2>
+    <div class="toolbar u-mt-3">
+      <span class="u-muted" id="result-count" style="font-size:.85rem;"></span>
+      <select class="select" id="sort-select" aria-label="Sort products">
+        <option value="relevance">Relevance</option>
+        <option value="price-asc">Price: Low to High</option>
+        <option value="price-desc">Price: High to Low</option>
+      </select>
+    </div>
+    <div class="product-grid u-mt-3" id="product-grid"></div>
+  </div>
+</main>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script type="module">
+  import "./js/app.js";
+  import { searchProducts, productCardHTML, bindWishButtons, skeletonGrid, emptyStateHTML, ICONS } from "./js/products.js";
+
+  const grid = document.getElementById("product-grid");
+  const params = new URLSearchParams(window.location.search);
+  const q = params.get("q") || "";
+  document.getElementById("query-echo").textContent = q;
+  document.title = `Search: ${q} — ORÈVA`;
+
+  let items = [];
+  const sortSelect = document.getElementById("sort-select");
+  const resultCount = document.getElementById("result-count");
+
+  function render() {
+    let list = [...items];
+    const mode = sortSelect.value;
+    if (mode === "price-asc") list.sort((a, b) => a.price - b.price);
+    else if (mode === "price-desc") list.sort((a, b) => b.price - a.price);
+    resultCount.textContent = `${list.length} result${list.length === 1 ? "" : "s"}`;
+    grid.innerHTML = list.length
+      ? list.map(productCardHTML).join("")
+      : `<div class="empty-state">${ICONS.search}<p>No products matched “${q}”. Try a different word or browse the shop.</p><a href="shop.html" class="btn btn--outline btn--sm">Browse all products</a></div>`;
+    bindWishButtons(grid);
+  }
+  sortSelect.addEventListener("change", render);
+
+  if (!q) {
+    grid.innerHTML = emptyStateHTML("Type something in the search bar above to find products.");
+  } else {
+    grid.innerHTML = skeletonGrid(6);
+    searchProducts(q).then((res) => {
+      items = res;
+      render();
+    });
+  }
+</script>
+</body>
+</html>

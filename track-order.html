@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Track Order — ORÈVA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="site-header" id="site-header"></header>
+
+<main>
+  <div class="container container--narrow section--tight">
+    <span class="eyebrow">Delivery</span>
+    <h2 class="u-mt-1">Track Your Order</h2>
+
+    <form id="track-form" class="u-mt-3" style="display:flex; gap:.8rem; flex-wrap:wrap;">
+      <div class="form-field" style="flex:1 1 260px; margin-bottom:0;">
+        <label for="order-id-input">Order ID</label>
+        <input id="order-id-input" type="text" placeholder="Enter your Order ID" required>
+      </div>
+      <button class="btn btn--brass" type="submit" style="align-self:flex-end;">Track</button>
+    </form>
+
+    <div id="track-result" class="u-mt-4"></div>
+  </div>
+</main>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script type="module">
+  import "./js/app.js";
+  import { formatDate, formatINR } from "./js/app.js";
+  import { fetchOrderById, TRACK_STAGES, stageIndexForStatus } from "./js/orders.js";
+
+  const params = new URLSearchParams(window.location.search);
+  const presetId = params.get("id");
+  const input = document.getElementById("order-id-input");
+  const result = document.getElementById("track-result");
+  if (presetId) input.value = presetId;
+
+  function statusPillClass(order) {
+    if (order.cancelled) return "status-pill--cancelled";
+    const s = stageIndexForStatus(order.orderStatus);
+    return ["status-pill--placed", "status-pill--confirmed", "status-pill--shipped", "status-pill--out", "status-pill--delivered"][s];
+  }
+
+  async function track(id) {
+    result.innerHTML = `<div class="page-loader"><span class="spinner"></span> Looking up order…</div>`;
+    const order = await fetchOrderById(id.trim());
+    if (!order) {
+      result.innerHTML = `<div class="empty-state"><p>We couldn't find an order with that ID. Please check and try again, or contact us for help.</p></div>`;
+      return;
+    }
+    const stage = order.cancelled ? -1 : stageIndexForStatus(order.orderStatus);
+
+    let delayHTML = "";
+    if (order.delayNote) {
+      delayHTML = `<div class="delay-note"><strong>Delivery update:</strong> ${order.delayNote}</div>`;
+    }
+
+    let courierHTML = "";
+    if (stage >= 2 && order.courierService) {
+      courierHTML = `
+        <div class="u-mt-3">
+          <p style="font-weight:600; font-size:.85rem;">Courier: ${order.courierService}</p>
+          <div class="copy-field u-mt-1">
+            <span id="tracking-id-text">${order.trackingId || "—"}</span>
+            <button type="button" id="copy-tracking">Copy</button>
+          </div>
+        </div>`;
+    }
+
+    result.innerHTML = `
+      <div class="summary-card">
+        <div class="u-flex" style="justify-content:space-between; flex-wrap:wrap; gap:.6rem;">
+          <div>
+            <p style="font-weight:700;">Order #${order.id}</p>
+            <p class="u-muted" style="font-size:.82rem;">Placed ${formatDate(order.orderDate)}</p>
+          </div>
+          <span class="status-pill ${statusPillClass(order)}">${order.cancelled ? "Cancelled" : order.orderStatus || "Order Placed"}</span>
+        </div>
+
+        ${delayHTML}
+
+        ${
+          order.cancelled
+            ? `<p class="u-mt-3 u-muted">This order was cancelled and is no longer being processed.</p>`
+            : `<div class="tracker u-mt-3">
+                ${TRACK_STAGES.map((label, i) => `
+                  <div class="tracker-step ${i < stage ? "is-done" : ""} ${i === stage ? "is-active is-done" : ""}">
+                    <div class="tracker-step__rail">
+                      <div class="tracker-dot">${i <= stage ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-11"/></svg>' : ""}</div>
+                      ${i < TRACK_STAGES.length - 1 ? '<div class="tracker-line"></div>' : ""}
+                    </div>
+                    <div class="tracker-step__body">
+                      <div class="tracker-step__title">${label}</div>
+                      <div class="tracker-step__time">${i === 0 ? formatDate(order.orderDate) : i <= stage ? "Completed" : "Pending"}</div>
+                    </div>
+                  </div>
+                `).join("")}
+              </div>`
+        }
+
+        ${courierHTML}
+
+        <div class="u-mt-3" style="font-size:.85rem;">
+          <p class="u-muted">${order.cancelled ? "" : `Expected delivery: ${formatDate(order.expectedDelivery)}`}</p>
+        </div>
+        <a href="order-details.html?id=${order.id}" class="btn btn--outline btn--full u-mt-3">View full order details</a>
+      </div>
+    `;
+
+    document.getElementById("copy-tracking")?.addEventListener("click", () => {
+      navigator.clipboard?.writeText(order.trackingId || "");
+      import("./js/app.js").then((m) => m.toast("Tracking ID copied", "success"));
+    });
+  }
+
+  document.getElementById("track-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (input.value.trim()) track(input.value);
+  });
+
+  if (presetId) track(presetId);
+</script>
+</body>
+</html>

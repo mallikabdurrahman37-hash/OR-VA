@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Order Details — ORÈVA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="site-header" id="site-header"></header>
+
+<main>
+  <div class="container container--narrow section--tight">
+    <span class="eyebrow">Order</span>
+    <h2 class="u-mt-1" id="order-heading">Order Details</h2>
+    <div id="mount" class="u-mt-3"><div class="page-loader"><span class="spinner"></span> Loading…</div></div>
+  </div>
+</main>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script type="module">
+  import "./js/app.js";
+  import { toast, formatINR, formatDate } from "./js/app.js";
+  import { fetchOrderById, TRACK_STAGES, stageIndexForStatus, canShowCancel, attemptCancelOrder } from "./js/orders.js";
+
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+  const mount = document.getElementById("mount");
+
+  function statusPillClass(order) {
+    if (order.cancelled) return "status-pill--cancelled";
+    const s = stageIndexForStatus(order.orderStatus);
+    return ["status-pill--placed", "status-pill--confirmed", "status-pill--shipped", "status-pill--out", "status-pill--delivered"][s];
+  }
+
+  async function render() {
+    const order = await fetchOrderById(id);
+    if (!order) {
+      mount.innerHTML = `<div class="empty-state"><p>Order not found.</p><a href="my-orders.html" class="btn btn--outline btn--sm">Back to my orders</a></div>`;
+      return;
+    }
+    document.getElementById("order-heading").textContent = `Order #${order.id.slice(0, 8).toUpperCase()}`;
+    const stage = order.cancelled ? -1 : stageIndexForStatus(order.orderStatus);
+    const showCancel = canShowCancel(order);
+
+    mount.innerHTML = `
+      <div class="summary-card">
+        <div class="u-flex" style="justify-content:space-between; flex-wrap:wrap; gap:.6rem;">
+          <span class="u-muted" style="font-size:.82rem;">Placed ${formatDate(order.orderDate)}</span>
+          <span class="status-pill ${statusPillClass(order)}">${order.cancelled ? "Cancelled" : order.orderStatus || "Order Placed"}</span>
+        </div>
+
+        ${order.delayNote ? `<div class="delay-note u-mt-3"><strong>Delivery update:</strong> ${order.delayNote}</div>` : ""}
+
+        ${
+          order.cancelled
+            ? `<p class="u-mt-3 u-muted">This order was cancelled.</p>`
+            : `<div class="tracker u-mt-2">
+                ${TRACK_STAGES.map(
+                  (label, i) => `
+                  <div class="tracker-step ${i <= stage ? "is-done" : ""}">
+                    <div class="tracker-step__rail">
+                      <div class="tracker-dot">${i <= stage ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-11"/></svg>' : ""}</div>
+                      ${i < TRACK_STAGES.length - 1 ? '<div class="tracker-line"></div>' : ""}
+                    </div>
+                    <div class="tracker-step__body">
+                      <div class="tracker-step__title">${label}</div>
+                    </div>
+                  </div>`
+                ).join("")}
+              </div>`
+        }
+
+        ${
+          stage >= 2 && order.courierService
+            ? `<div class="u-mt-2">
+                <p style="font-weight:600; font-size:.85rem;">Courier: ${order.courierService}</p>
+                <div class="copy-field u-mt-1"><span>${order.trackingId || "—"}</span><button type="button" id="copy-tracking">Copy</button></div>
+              </div>`
+            : ""
+        }
+
+        <hr class="divider u-mt-3">
+        <h4 class="u-mt-3" style="font-size:1rem;">Items</h4>
+        <div class="stack u-mt-2">
+          ${(order.items || [])
+            .map(
+              (i) => `<div class="u-flex" style="justify-content:space-between; align-items:flex-start;">
+                <div class="u-flex"><img src="${i.image || ""}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:4px;background:var(--paper-deep);"><span>${i.name}${i.size ? ` (${i.size})` : ""} × ${i.qty}</span></div>
+                <span>${formatINR(i.price * i.qty)}</span>
+              </div>`
+            )
+            .join("")}
+        </div>
+
+        <hr class="divider u-mt-3">
+        <div class="summary-row"><span>Subtotal</span><strong>${formatINR(order.subtotal)}</strong></div>
+        <div class="summary-row"><span>Shipping</span><strong>${order.shippingCharge ? formatINR(order.shippingCharge) : "Free"}</strong></div>
+        <div class="summary-total"><span>Total</span><span>${formatINR(order.totalAmount)}</span></div>
+
+        <h4 class="u-mt-3" style="font-size:1rem;">Delivery Address</h4>
+        <p class="u-muted u-mt-1">${order.shippingAddress?.name || ""}<br>${order.shippingAddress?.addressLine || ""}, ${order.shippingAddress?.city || ""}, ${order.shippingAddress?.state || ""} ${order.shippingAddress?.pincode || ""}<br>Phone: ${order.shippingAddress?.phone || ""}</p>
+        <p class="u-muted u-mt-1">Payment: Cash on Delivery</p>
+        ${!order.cancelled ? `<p class="u-muted u-mt-1">Expected delivery: ${formatDate(order.expectedDelivery)}</p>` : ""}
+
+        ${showCancel ? `<button class="btn btn--outline btn--full u-mt-3" id="cancel-btn">Cancel Order</button>` : ""}
+        <a href="${`mailto:mallikabdurrahman37@gmail.com?subject=${encodeURIComponent("Order #" + order.id)}`}" class="btn btn--ghost btn--full">Need help with this order?</a>
+      </div>
+    `;
+
+    document.getElementById("copy-tracking")?.addEventListener("click", () => {
+      navigator.clipboard?.writeText(order.trackingId || "");
+      toast("Tracking ID copied", "success");
+    });
+
+    document.getElementById("cancel-btn")?.addEventListener("click", async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.textContent = "Cancelling…";
+      const res = await attemptCancelOrder(order.id);
+      if (res.ok) {
+        toast("Order cancelled", "success");
+        render();
+      } else {
+        toast(res.reason, "error");
+        btn.disabled = false;
+        btn.textContent = "Cancel Order";
+      }
+    });
+  }
+
+  if (!id) {
+    mount.innerHTML = `<div class="empty-state"><p>No order specified.</p><a href="my-orders.html" class="btn btn--outline btn--sm">Back to my orders</a></div>`;
+  } else {
+    render();
+  }
+</script>
+</body>
+</html>

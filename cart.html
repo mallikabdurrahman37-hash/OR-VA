@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Your Cart — ORÈVA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="site-header" id="site-header"></header>
+
+<main>
+  <div class="container section--tight">
+    <span class="eyebrow">Cart</span>
+    <h2 class="u-mt-1">Your Bag</h2>
+
+    <div id="cart-empty" class="empty-state" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 016 0v2"/></svg>
+      <p>Your bag is empty.</p>
+      <a href="shop.html" class="btn btn--brass btn--sm">Start shopping</a>
+    </div>
+
+    <div class="cart-layout u-mt-3" id="cart-layout" hidden>
+      <div id="cart-items"></div>
+      <aside class="summary-card">
+        <h4 class="u-mt-1">Order Summary</h4>
+        <div class="u-mt-3">
+          <div class="summary-row"><span>Subtotal</span><strong id="sum-subtotal">₹0</strong></div>
+          <div class="summary-row"><span>Shipping</span><strong id="sum-shipping">₹0</strong></div>
+        </div>
+        <div class="summary-total"><span>Total</span><span id="sum-total">₹0</span></div>
+        <p class="u-muted" style="font-size:.78rem; margin-top:.6rem;">Payment: Cash on Delivery only.</p>
+        <a href="checkout.html" class="btn btn--brass btn--full u-mt-3">Proceed to Checkout</a>
+        <a href="shop.html" class="btn btn--ghost btn--full">Continue shopping</a>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script type="module">
+  import "./js/app.js";
+  import { toast, formatINR, refreshHeaderCounts } from "./js/app.js";
+  import { getCart, updateQty, removeFromCart, cartTotals } from "./js/cart.js";
+
+  function render() {
+    const items = getCart();
+    document.getElementById("cart-empty").hidden = items.length > 0;
+    document.getElementById("cart-layout").hidden = items.length === 0;
+    if (!items.length) return;
+
+    document.getElementById("cart-items").innerHTML = items
+      .map(
+        (i) => `
+      <div class="cart-item" data-id="${i.id}" data-size="${i.size || ""}">
+        <img src="${i.image || ""}" alt="${i.name}">
+        <div>
+          <div class="cart-item__top">
+            <div>
+              <div class="cart-item__name">${i.name}</div>
+              <div class="cart-item__meta">${i.size ? `Size: ${i.size} · ` : ""}${formatINR(i.price)} each</div>
+            </div>
+            <div class="price">${formatINR(i.price * i.qty)}</div>
+          </div>
+          <div class="cart-item__foot">
+            <div class="qty-stepper">
+              <button type="button" data-action="minus" aria-label="Decrease quantity">−</button>
+              <span>${i.qty}</span>
+              <button type="button" data-action="plus" aria-label="Increase quantity">+</button>
+            </div>
+            <button class="remove-link" data-action="remove" type="button">Remove</button>
+          </div>
+        </div>
+      </div>`
+      )
+      .join("");
+
+    const { subtotal, shippingCharge, totalAmount } = cartTotals(items);
+    document.getElementById("sum-subtotal").textContent = formatINR(subtotal);
+    document.getElementById("sum-shipping").textContent = shippingCharge === 0 ? "Free" : formatINR(shippingCharge);
+    document.getElementById("sum-total").textContent = formatINR(totalAmount);
+
+    document.querySelectorAll(".cart-item").forEach((row) => {
+      const id = row.getAttribute("data-id");
+      const size = row.getAttribute("data-size") || null;
+      const item = items.find((i) => i.id === id && (i.size || "") === (size || ""));
+      row.querySelector('[data-action="minus"]').addEventListener("click", () => {
+        updateQty(id, size, item.qty - 1);
+        refreshHeaderCounts();
+        render();
+      });
+      row.querySelector('[data-action="plus"]').addEventListener("click", () => {
+        updateQty(id, size, Math.min(item.qty + 1, item.stock ?? 99));
+        refreshHeaderCounts();
+        render();
+      });
+      row.querySelector('[data-action="remove"]').addEventListener("click", () => {
+        removeFromCart(id, size);
+        refreshHeaderCounts();
+        toast("Removed from cart");
+        render();
+      });
+    });
+  }
+
+  render();
+</script>
+</body>
+</html>

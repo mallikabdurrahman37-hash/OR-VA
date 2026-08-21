@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Contact — ORÈVA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="site-header" id="site-header"></header>
+
+<main>
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="index.html">Home</a><span>/</span> Contact</nav>
+  </div>
+
+  <section class="container section--tight" style="padding-top:0;">
+    <span class="eyebrow">We're here to help</span>
+    <h2 class="u-mt-1">Contact ORÈVA</h2>
+    <p class="u-muted u-mt-2" style="max-width:60ch;">Reach us directly — every message goes straight to a real person, usually within the same day.</p>
+
+    <div class="contact-grid u-mt-4">
+      <ul class="contact-list" id="contact-list"></ul>
+
+      <div>
+        <h4>Send a message</h4>
+        <form id="contact-form" class="u-mt-2">
+          <div class="form-row">
+            <div class="form-field">
+              <label for="c-name">Name</label>
+              <input id="c-name" type="text" required>
+            </div>
+            <div class="form-field">
+              <label for="c-email">Email</label>
+              <input id="c-email" type="email" required>
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="c-message">Message</label>
+            <textarea id="c-message" required placeholder="How can we help?"></textarea>
+          </div>
+          <button class="btn btn--brass" type="submit">Send via Email</button>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script type="module">
+  import "./js/app.js";
+  import { CONTACT, waLink, telLink, mailLink, ICONS } from "./js/app.js";
+
+  document.getElementById("contact-list").innerHTML = `
+    <li>
+      <span class="icn">${ICONS.whatsapp}</span>
+      <div><span class="lbl">WhatsApp</span><br><a class="val" href="${waLink()}" target="_blank" rel="noopener">${CONTACT.whatsapp}</a></div>
+    </li>
+    <li>
+      <span class="icn">${ICONS.phone}</span>
+      <div><span class="lbl">Phone</span><br><a class="val" href="${telLink()}">${CONTACT.phone}</a></div>
+    </li>
+    <li>
+      <span class="icn">${ICONS.mail}</span>
+      <div><span class="lbl">Email</span><br><a class="val" href="${mailLink()}">${CONTACT.email}</a></div>
+    </li>
+    <li>
+      <span class="icn">${ICONS.instagram}</span>
+      <div><span class="lbl">Instagram</span><br><a class="val" href="${CONTACT.instagramUrl}" target="_blank" rel="noopener">${CONTACT.instagramHandle}</a></div>
+    </li>
+    <li>
+      <span class="icn">${ICONS.youtube}</span>
+      <div><span class="lbl">YouTube</span><br><a class="val" href="${CONTACT.youtubeUrl}" target="_blank" rel="noopener">${CONTACT.youtubeName}</a></div>
+    </li>
+    <li>
+      <span class="icn">${ICONS.pin}</span>
+      <div><span class="lbl">Address</span><br><span class="val">${CONTACT.address}</span></div>
+    </li>
+  `;
+
+  document.getElementById("contact-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = document.getElementById("c-name").value;
+    const email = document.getElementById("c-email").value;
+    const message = document.getElementById("c-message").value;
+    const subject = `Website enquiry from ${name}`;
+    const body = `${message}\n\nFrom: ${name} (${email})`;
+    window.location.href = `${mailLink(subject)}&body=${encodeURIComponent(body)}`;
+  });
+</script>
+</body>
+</html>
